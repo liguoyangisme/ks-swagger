@@ -21,7 +21,7 @@ public class OrderVo {
     @ApiModelProperty(value="用户名",name="name")
     private String name;
     @ApiModelProperty(value="用户列表",name="userList")
-    private Map<String,UserVo> userList;
+    private List<UserVo> userList;
 
     public Long getId() {
         return id;
@@ -39,11 +39,11 @@ public class OrderVo {
         this.name = name;
     }
 
-    public Map<String, UserVo> getUserList() {
+    public List<UserVo> getUserList() {
         return userList;
     }
 
-    public void setUserList(Map<String, UserVo> userList) {
+    public void setUserList(List<UserVo> userList) {
         this.userList = userList;
     }
 
