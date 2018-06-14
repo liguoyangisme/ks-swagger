@@ -3,6 +3,11 @@ package com.swagger.model.vo;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
+import javax.validation.constraints.Max;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * @Description: User
  * @Author 袁伟倩
@@ -15,6 +20,8 @@ public class OrderVo {
     private Long id;
     @ApiModelProperty(value="用户名",name="name")
     private String name;
+    @ApiModelProperty(value="用户列表",name="userList")
+    private Map<String,UserVo> userList;
 
     public Long getId() {
         return id;
@@ -30,6 +37,14 @@ public class OrderVo {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Map<String, UserVo> getUserList() {
+        return userList;
+    }
+
+    public void setUserList(Map<String, UserVo> userList) {
+        this.userList = userList;
     }
 
     @Override

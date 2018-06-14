@@ -1,6 +1,8 @@
 package com.swagger.controller;
 
+import com.swagger.annotation.Mock;
 import com.swagger.model.User;
+import com.swagger.model.vo.OrderVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
@@ -24,7 +26,7 @@ public class TestController {
      * @ApiOperation 中notes是api的详细说明，需要点开api 链接才能看到。
      * @ApiOperation 中 produces 用来标记api返回值的具体类型。这里是json格式，utf8编码。
      */
-
+    @Mock
     @ApiOperation(value = "测试服务", notes = "测试服务")
     @ApiImplicitParam(name = "User", value = "用户详细实体User", required = true, dataType = "User")
     @RequestMapping(value = "/post", method = RequestMethod.POST)
@@ -33,6 +35,7 @@ public class TestController {
         return "服务测试成功，你输入的参数为：" + user.toString();
     }
 
+    @Mock
     @ApiOperation(value = "测试服务", notes = "测试服务", consumes = "application/json", produces = "application/json")
     @RequestMapping(value = "/test/{input}", method = RequestMethod.GET)
     @ResponseBody
@@ -43,14 +46,16 @@ public class TestController {
         return user;
     }
 
+    @Mock
     @ApiOperation(value = "测试服务", notes = "测试服务")
     @ApiImplicitParam(name = "User", value = "用户详细实体User", required = true, dataType = "User")
     @RequestMapping(value = "/put", method = RequestMethod.PUT)
     @ResponseBody
-    public User put(@RequestBody User user) {
-        return user;
+    public OrderVo put(@RequestBody User user) {
+        return null;
     }
 
+    @Mock
     @ApiOperation(value = "测试服务", notes = "测试服务")
     @ApiImplicitParam(name = "User", value = "用户详细实体User", required = true, dataType = "User")
     @RequestMapping(value = "/delete", method = RequestMethod.DELETE)

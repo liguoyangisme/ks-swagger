@@ -17,7 +17,10 @@ public class UserVo {
     private String name;
 
     @ApiModelProperty(value="年龄",name="age")
-    private String age;
+    private int age;
+
+    @ApiModelProperty(value="时薪",name="price")
+    private float price;
 
     public Long getId() {
         return id;
@@ -35,12 +38,20 @@ public class UserVo {
         this.name = name;
     }
 
-    public String getAge() {
+    public int getAge() {
         return age;
     }
 
-    public void setAge(String age) {
+    public void setAge(int age) {
         this.age = age;
+    }
+
+    public float getPrice() {
+        return price;
+    }
+
+    public void setPrice(float price) {
+        this.price = price;
     }
 
     @Override
