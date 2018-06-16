@@ -11,4 +11,8 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Mock {
 
+    /**
+     * 泛型类型
+     */
+    Class[] type() default Class.class;
 }

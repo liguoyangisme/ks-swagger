@@ -1,7 +1,6 @@
 package com.swagger.handler;
 
-import com.swagger.annotation.MockList;
-import com.swagger.annotation.MockMap;
+import com.swagger.annotation.Mock;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -10,10 +9,12 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.core.ResolvableType;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @Mock方法拦截，生成模拟数据
@@ -32,18 +33,6 @@ public class MockAop {
     public void mock() {}
 
     /**
-     * @MockList 拦截点
-     */
-    @Pointcut("@annotation(com.swagger.annotation.MockList)")
-    public void mockList() {}
-
-    /**
-     * @MockMap 拦截点
-     */
-    @Pointcut("@annotation(com.swagger.annotation.MockMap)")
-    public void mockMap() {}
-
-    /**
      * @Mock 方法拦截，生成模拟数据
      * @param joinPoint 拦截点
      * @return 返回值
@@ -56,54 +45,10 @@ public class MockAop {
             Method method = signature.getMethod();
             //返回类型
             Class cls = method.getReturnType();
-            //生成模拟参数值
-            return genParamValue(cls);
-        }catch (Exception e){
-            log.error("生成Mock数据时，发生异常！", e);
-        }
-        return joinPoint.proceed();
-    }
-
-    /**
-     * @MockList 方法拦截，生成模拟数据
-     * @param joinPoint 拦截点
-     * @return 返回值
-     */
-    @Around("mockList()")
-    public Object mockListAround(ProceedingJoinPoint joinPoint) throws Throwable {
-        try{
-            MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-            //从切面中获取当前方法
-            Method method = signature.getMethod();
-            //返回类型
-            Class cls = method.getReturnType();
             //注解（为了提取泛型类型）
-            MockList mockList = method.getAnnotation(MockList.class);
+            Mock mockList = method.getAnnotation(Mock.class);
             //生成模拟参数值
             return genParamValue(cls, mockList.type());
-        }catch (Exception e){
-            log.error("生成Mock数据时，发生异常！", e);
-        }
-        return joinPoint.proceed();
-    }
-
-    /**
-     * @MockMap 方法拦截，生成模拟数据
-     * @param joinPoint 拦截点
-     * @return 返回值
-     */
-    @Around("mockMap()")
-    public Object mockMapAround(ProceedingJoinPoint joinPoint) throws Throwable {
-        try{
-            MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-            //从切面中获取当前方法
-            Method method = signature.getMethod();
-            //返回类型
-            Class cls = method.getReturnType();
-            //注解（为了提取泛型类型）
-            MockMap mockList = method.getAnnotation(MockMap.class);
-            //生成模拟参数值
-            return genParamValue(cls, mockList.keyType(), mockList.valueType());
         }catch (Exception e){
             log.error("生成Mock数据时，发生异常！", e);
         }
@@ -188,6 +133,7 @@ public class MockAop {
 
         //对象
         }else if (Object.class.isAssignableFrom(cls)){
+            ResolvableType resolvableType = ResolvableType.forClass(cls);
             //生成类对象
             Object obj = cls.newInstance();
             //调用所有Set方法，生成模拟内容
@@ -196,8 +142,9 @@ public class MockAop {
                 Class setParamClass = f.getType();
                 try {
                     //生成参数值，并写入对象
-                    getSetMethod(f, cls).invoke(obj, genParamValue(setParamClass, getGenericType(f)));
+                    getSetMethod(f, cls).invoke(obj, genParamValue(setParamClass, getGenericType(f, genericType)));
                 }catch (Exception e){
+                    e.printStackTrace();
                     throw new RuntimeException(e);
                 }
             });
@@ -214,15 +161,32 @@ public class MockAop {
      * @param field 字段定义
      * @return 泛型类型
      */
-    private Class[] getGenericType(Field field){
+    private Class[] getGenericType(Field field,Class ... genericTypes){
         if(List.class.isAssignableFrom(field.getType()) || Set.class.isAssignableFrom(field.getType()) || Map.class.isAssignableFrom(field.getType())) {
             // 如果是List类型，得到其Generic的类型
             Type genericType = field.getGenericType();
             // 如果是泛型参数的类型
             if (genericType instanceof ParameterizedType) {
                 ParameterizedType pt = (ParameterizedType) genericType;
+                final AtomicInteger i = new AtomicInteger(0);
                 //得到泛型里的class类型对象
-                return Arrays.stream(pt.getActualTypeArguments()).map(t -> (Class<?>)t).toArray(Class[]::new);
+                return Arrays.stream(pt.getActualTypeArguments())
+                        .map(t -> {
+                                try {
+                                    //如果@Mock声明泛型，优先使用@Mock声明的泛型
+                                    if (genericTypes!=null && i.intValue()<genericTypes.length) {
+                                        return (Class<?>) genericTypes[i.intValue()];
+                                    } else {
+                                        //将泛型类型转为Class
+                                        return (Class<?>) t;
+                                    }
+                                }finally {
+                                    i.incrementAndGet();
+                                }
+
+                            }
+                        )
+                        .toArray(Class[]::new);
             }
             throw new RuntimeException("无法读取泛型");
         }
@@ -238,6 +202,6 @@ public class MockAop {
     private Method getSetMethod(Field field, Class cls){
         String setMethodName = "set"+field.getName().substring(0,1).toUpperCase()+field.getName().substring(1);
         val method =  Arrays.stream(cls.getMethods()).filter(m -> m.getName().equals(setMethodName)).findFirst();
-        return method.get();
+        return method.isPresent()?method.get():null;
     }
 }
